@@ -48,6 +48,14 @@ public class FinancialRecord {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Transient
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

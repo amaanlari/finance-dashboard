@@ -235,4 +235,104 @@ class FinancialRecordControllerIT extends BaseIT {
                 .header("Authorization", "Bearer " + analystToken))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void testSoftDeletePreservesDataInDatabase() throws Exception {
+        createTestUser(ANALYST_USERNAME, ANALYST_EMAIL, ANALYST_PASSWORD, Role.ANALYST);
+        String analystToken = getAnalystAuthToken();
+
+        // Create two records
+        FinancialRecordRequest request1 = new FinancialRecordRequest();
+        request1.setAmount(new BigDecimal("1000.00"));
+        request1.setType(TransactionType.INCOME);
+        request1.setCategory("Salary");
+        request1.setDate(LocalDate.now());
+
+        String response1 = mockMvc.perform(post("/api/records")
+                .header("Authorization", "Bearer " + analystToken)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request1)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long recordId1 = objectMapper.readTree(response1).get("id").asLong();
+
+        FinancialRecordRequest request2 = new FinancialRecordRequest();
+        request2.setAmount(new BigDecimal("500.00"));
+        request2.setType(TransactionType.EXPENSE);
+        request2.setCategory("Food");
+        request2.setDate(LocalDate.now());
+
+        mockMvc.perform(post("/api/records")
+                .header("Authorization", "Bearer " + analystToken)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request2)))
+                .andExpect(status().isCreated());
+
+        // Verify both records are in the list
+        mockMvc.perform(get("/api/records")
+                .header("Authorization", "Bearer " + analystToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        // Delete first record (soft delete)
+        mockMvc.perform(delete("/api/records/" + recordId1)
+                .header("Authorization", "Bearer " + analystToken))
+                .andExpect(status().isNoContent());
+
+        // Verify only active record is in the list
+        mockMvc.perform(get("/api/records")
+                .header("Authorization", "Bearer " + analystToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].amount").value(500.00));
+
+        // Verify deleted record cannot be accessed
+        mockMvc.perform(get("/api/records/" + recordId1)
+                .header("Authorization", "Bearer " + analystToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testCannotUpdateSoftDeletedRecord() throws Exception {
+        createTestUser(ANALYST_USERNAME, ANALYST_EMAIL, ANALYST_PASSWORD, Role.ANALYST);
+        String analystToken = getAnalystAuthToken();
+
+        FinancialRecordRequest request = new FinancialRecordRequest();
+        request.setAmount(new BigDecimal("1000.00"));
+        request.setType(TransactionType.INCOME);
+        request.setCategory("Salary");
+        request.setDate(LocalDate.now());
+
+        String response = mockMvc.perform(post("/api/records")
+                .header("Authorization", "Bearer " + analystToken)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long recordId = objectMapper.readTree(response).get("id").asLong();
+
+        // Delete the record (soft delete)
+        mockMvc.perform(delete("/api/records/" + recordId)
+                .header("Authorization", "Bearer " + analystToken))
+                .andExpect(status().isNoContent());
+
+        // Try to update deleted record
+        FinancialRecordRequest updateRequest = new FinancialRecordRequest();
+        updateRequest.setAmount(new BigDecimal("2000.00"));
+        updateRequest.setType(TransactionType.INCOME);
+        updateRequest.setCategory("Updated");
+        updateRequest.setDate(LocalDate.now());
+
+        mockMvc.perform(put("/api/records/" + recordId)
+                .header("Authorization", "Bearer " + analystToken)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isNotFound());
+    }
 }
