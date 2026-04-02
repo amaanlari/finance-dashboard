@@ -67,5 +67,5 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
 
     // Find latest transaction date in range
     @Query("SELECT MAX(f.date) FROM FinancialRecord f WHERE f.deletedAt IS NULL AND f.date BETWEEN :startDate AND :endDate")
-    LocalDateTime findLatestTransactionDate(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    LocalDate findLatestTransactionDate(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

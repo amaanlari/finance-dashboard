@@ -70,7 +70,7 @@ public class DashboardService {
         List<FinancialRecordResponse> recentActivity = getRecentActivity();
         
         // Get metadata
-        LocalDateTime lastTransactionDate = recordRepository.findLatestTransactionDate(startDate, endDate);
+        LocalDate lastTransactionDate = recordRepository.findLatestTransactionDate(startDate, endDate);
         PeriodInfo periodInfo = buildPeriodInfo(startDate, endDate);
 
         return EnhancedDashboardSummary.builder()

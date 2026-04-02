@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,6 @@ public class EnhancedDashboardSummary {
     // Metadata
     private PeriodInfo period;
     private LocalDateTime generatedAt;
-    private LocalDateTime lastTransactionDate;
+    private LocalDate lastTransactionDate;
 }
 
