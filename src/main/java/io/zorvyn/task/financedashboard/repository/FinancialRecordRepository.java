@@ -17,24 +17,25 @@ import java.util.Map;
 public interface FinancialRecordRepository extends JpaRepository<FinancialRecord, Long>,
         JpaSpecificationExecutor<FinancialRecord> {
 
-    List<FinancialRecord> findByType(TransactionType type);
+    List<FinancialRecord> findByTypeAndDeletedAtIsNull(TransactionType type);
 
-    List<FinancialRecord> findByCategory(String category);
+    List<FinancialRecord> findByCategoryAndDeletedAtIsNull(String category);
 
-    List<FinancialRecord> findByDateBetween(LocalDate startDate, LocalDate endDate);
+    List<FinancialRecord> findByDateBetweenAndDeletedAtIsNull(LocalDate startDate, LocalDate endDate);
 
-    List<FinancialRecord> findByTypeAndDateBetween(TransactionType type, LocalDate startDate, LocalDate endDate);
+    List<FinancialRecord> findByTypeAndDateBetweenAndDeletedAtIsNull(TransactionType type, LocalDate startDate, LocalDate endDate);
 
-    List<FinancialRecord> findTop10ByOrderByDateDesc();
+    List<FinancialRecord> findTop10ByDeletedAtIsNullOrderByDateDesc();
 
-    @Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.type = :type")
+    @Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.type = :type AND f.deletedAt IS NULL")
     BigDecimal sumByType(@Param("type") TransactionType type);
 
-    @Query("SELECT f.category, SUM(f.amount) FROM FinancialRecord f GROUP BY f.category")
+    @Query("SELECT f.category, SUM(f.amount) FROM FinancialRecord f WHERE f.deletedAt IS NULL GROUP BY f.category")
     List<Object[]> sumByCategory();
 
     @Query("SELECT FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type, SUM(f.amount) " +
            "FROM FinancialRecord f " +
+           "WHERE f.deletedAt IS NULL " +
            "GROUP BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type " +
            "ORDER BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date)")
     List<Object[]> getMonthlyTrends();

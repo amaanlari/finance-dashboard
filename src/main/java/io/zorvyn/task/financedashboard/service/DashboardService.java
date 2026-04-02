@@ -43,7 +43,7 @@ public class DashboardService {
     }
 
     private List<FinancialRecordResponse> getRecentActivity() {
-        return recordRepository.findTop10ByOrderByDateDesc()
+        return recordRepository.findTop10ByDeletedAtIsNullOrderByDateDesc()
                 .stream()
                 .map(record -> FinancialRecordResponse.builder()
                         .id(record.getId())
