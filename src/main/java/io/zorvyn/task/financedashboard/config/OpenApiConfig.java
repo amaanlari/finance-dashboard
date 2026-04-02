@@ -52,7 +52,7 @@ import org.springframework.context.annotation.Configuration;
                         description = "Development Server"
                 ),
                 @Server(
-                        url = "https://api.financedashboard.com",
+                        url = "https://finance-dashboard-uwib.onrender.com/",
                         description = "Production Server"
                 )
         }
