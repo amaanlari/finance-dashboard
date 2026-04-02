@@ -13,10 +13,15 @@ public class FinancialRecordSpecification {
 
     public static Specification<FinancialRecord> withFilter(FinancialRecordFilter filter) {
         return Specification
-                .where(hasType(filter.type()))
+                .where(notDeleted())
+                .and(hasType(filter.type()))
                 .and(hasCategory(filter.category()))
                 .and(onOrAfterDate(filter.startDate()))
                 .and(onOrBeforeDate(filter.endDate()));
+    }
+
+    private static Specification<FinancialRecord> notDeleted() {
+        return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
     }
 
     private static Specification<FinancialRecord> hasType(TransactionType type) {

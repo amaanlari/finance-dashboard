@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -53,15 +54,26 @@ public class FinancialRecordService {
     }
 
     public FinancialRecordResponse getRecordById(Long id) {
-        return recordRepository.findById(id)
-                .map(this::mapToResponse)
+        FinancialRecord record = recordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Record not found with id: " + id));
+        
+        // Check if record is soft-deleted
+        if (record.isDeleted()) {
+            throw new ResourceNotFoundException("Record not found with id: " + id);
+        }
+        
+        return mapToResponse(record);
     }
 
     @Transactional
     public FinancialRecordResponse updateRecord(Long id, FinancialRecordRequest request) {
         FinancialRecord record = recordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Record not found with id: " + id));
+        
+        // Check if record is soft-deleted
+        if (record.isDeleted()) {
+            throw new ResourceNotFoundException("Record not found with id: " + id);
+        }
 
         record.setAmount(request.getAmount());
         record.setType(request.getType());
@@ -74,10 +86,12 @@ public class FinancialRecordService {
 
     @Transactional
     public void deleteRecord(Long id) {
-        if (!recordRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Record not found with id: " + id);
-        }
-        recordRepository.deleteById(id);
+        FinancialRecord record = recordRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Record not found with id: " + id));
+        
+        // Soft delete: set deletedAt timestamp instead of removing from database
+        record.setDeletedAt(LocalDateTime.now());
+        recordRepository.save(record);
     }
 
     private User getCurrentUser() {

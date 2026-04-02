@@ -116,7 +116,7 @@ A production-ready RESTful API backend for a financial dashboard system with com
 ```
 src/main/java/io/zorvyn/task/financedashboard/
 ├── config/              # Configuration classes
-│   └── DataInitializer.java
+│   └── 
 ├── controller/          # REST endpoints
 │   ├── AuthController.java
 │   ├── DashboardController.java
@@ -148,12 +148,14 @@ src/main/java/io/zorvyn/task/financedashboard/
 │   ├── JwtAuthenticationFilter.java
 │   ├── JwtUtil.java
 │   └── SecurityConfig.java
-└── service/             # Business logic
-    ├── AuthService.java
-    ├── DashboardService.java
-    ├── FinancialRecordService.java
-    ├── UserDetailsServiceImpl.java
-    └── UserService.java
+├── service/             # Business logic
+│    ├── AuthService.java
+│    ├── DashboardService.java
+│    ├── FinancialRecordService.java
+│    ├── UserDetailsServiceImpl.java
+│    └── UserService.java
+└── util/    
+     └──DataInitializer.java
 ```
 
 ## API Endpoints Summary

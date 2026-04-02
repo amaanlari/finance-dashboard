@@ -186,20 +186,95 @@ class FinancialRecordServiceTest {
 
     @Test
     void testDeleteRecord() {
-        when(recordRepository.existsById(1L)).thenReturn(true);
+        when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(recordRepository.save(any(FinancialRecord.class))).thenReturn(record);
+
         recordService.deleteRecord(1L);
-        verify(recordRepository).existsById(1L);
-        verify(recordRepository).deleteById(1L);
+
+        verify(recordRepository).findById(1L);
+        verify(recordRepository).save(any(FinancialRecord.class));
     }
 
     @Test
     void testDeleteRecordNotFound() {
-        when(recordRepository.existsById(999L)).thenReturn(false);
+        when(recordRepository.findById(999L)).thenReturn(Optional.empty());
+
         assertThatThrownBy(() -> recordService.deleteRecord(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Record not found with id: 999");
-        verify(recordRepository).existsById(999L);
-        verify(recordRepository, never()).deleteById(any());
+
+        verify(recordRepository).findById(999L);
+        verify(recordRepository, never()).save(any());
+    }
+
+    @Test
+    void testSoftDeleteSetsDeletionTimestamp() {
+        FinancialRecord deletableRecord = FinancialRecord.builder()
+                .id(1L)
+                .amount(new BigDecimal("1000.00"))
+                .type(TransactionType.INCOME)
+                .category("Salary")
+                .date(LocalDate.now())
+                .createdBy(user)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(null)
+                .build();
+
+        when(recordRepository.findById(1L)).thenReturn(Optional.of(deletableRecord));
+        when(recordRepository.save(any(FinancialRecord.class))).thenReturn(deletableRecord);
+
+        recordService.deleteRecord(1L);
+
+        verify(recordRepository).findById(1L);
+        verify(recordRepository).save(argThat(record -> record.getDeletedAt() != null));
+    }
+
+    @Test
+    void testCannotUpdateDeletedRecord() {
+        FinancialRecord deletedRecord = FinancialRecord.builder()
+                .id(1L)
+                .amount(new BigDecimal("1000.00"))
+                .type(TransactionType.INCOME)
+                .category("Salary")
+                .date(LocalDate.now())
+                .createdBy(user)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(LocalDateTime.now())
+                .build();
+
+        when(recordRepository.findById(1L)).thenReturn(Optional.of(deletedRecord));
+
+        FinancialRecordRequest updateRequest = new FinancialRecordRequest();
+        updateRequest.setAmount(new BigDecimal("2000.00"));
+
+        assertThatThrownBy(() -> recordService.updateRecord(1L, updateRequest))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Record not found with id: 1");
+
+        verify(recordRepository).findById(1L);
+        verify(recordRepository, never()).save(any());
+    }
+
+    @Test
+    void testCannotGetDeletedRecord() {
+        FinancialRecord deletedRecord = FinancialRecord.builder()
+                .id(1L)
+                .amount(new BigDecimal("1000.00"))
+                .type(TransactionType.INCOME)
+                .category("Salary")
+                .date(LocalDate.now())
+                .createdBy(user)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(LocalDateTime.now())
+                .build();
+
+        when(recordRepository.findById(1L)).thenReturn(Optional.of(deletedRecord));
+
+        assertThatThrownBy(() -> recordService.getRecordById(1L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Record not found with id: 1");
+
+        verify(recordRepository).findById(1L);
     }
 
     @Test

@@ -2,6 +2,20 @@
 
 A comprehensive backend system for managing financial records with role-based access control, built with Spring Boot, Spring Security, JWT authentication, Spring Data JPA, and interactive **Swagger/OpenAPI documentation**.
 
+---
+
+## 📚 Documentation
+
+- **[API_TESTING_EXAMPLES.md](./API_TESTING_EXAMPLES.md)** - API Testing Guide with 8 complete test cases
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Testing procedures and best practices
+- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Detailed project overview
+- **[SWAGGER_DOCUMENTATION.md](./SWAGGER_DOCUMENTATION.md)** - API documentation
+- **[SOFT_DELETE_IMPLEMENTATION.md](./SOFT_DELETE_IMPLEMENTATION.md)** - Soft delete implementation details
+- **[TESTS_ADDED.md](./TESTS_ADDED.md)** - Test suite information
+- **[HELP.md](./HELP.md)** - Help and support
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)

@@ -10,32 +10,62 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public interface FinancialRecordRepository extends JpaRepository<FinancialRecord, Long>,
         JpaSpecificationExecutor<FinancialRecord> {
 
-    List<FinancialRecord> findByType(TransactionType type);
+    List<FinancialRecord> findByTypeAndDeletedAtIsNull(TransactionType type);
 
-    List<FinancialRecord> findByCategory(String category);
+    List<FinancialRecord> findByCategoryAndDeletedAtIsNull(String category);
 
-    List<FinancialRecord> findByDateBetween(LocalDate startDate, LocalDate endDate);
+    List<FinancialRecord> findByDateBetweenAndDeletedAtIsNull(LocalDate startDate, LocalDate endDate);
 
-    List<FinancialRecord> findByTypeAndDateBetween(TransactionType type, LocalDate startDate, LocalDate endDate);
+    List<FinancialRecord> findByTypeAndDateBetweenAndDeletedAtIsNull(TransactionType type, LocalDate startDate, LocalDate endDate);
 
-    List<FinancialRecord> findTop10ByOrderByDateDesc();
+    List<FinancialRecord> findTop10ByDeletedAtIsNullOrderByDateDesc();
 
-    @Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.type = :type")
-    BigDecimal sumByType(@Param("type") TransactionType type);
+    // Optimized sum by type with date range filtering
+    @Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.type = :type AND f.deletedAt IS NULL AND f.date BETWEEN :startDate AND :endDate")
+    BigDecimal sumByType(@Param("type") TransactionType type, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-    @Query("SELECT f.category, SUM(f.amount) FROM FinancialRecord f GROUP BY f.category")
-    List<Object[]> sumByCategory();
+    // Legacy method for backward compatibility
+    @Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.type = :type AND f.deletedAt IS NULL")
+    BigDecimal sumByTypeAllTime(@Param("type") TransactionType type);
 
+    // Enhanced sum by category with transaction count
+    @Query("SELECT f.category, SUM(f.amount), COUNT(f) FROM FinancialRecord f WHERE f.deletedAt IS NULL AND f.date BETWEEN :startDate AND :endDate GROUP BY f.category")
+    List<Object[]> sumByCategory(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    // Legacy method for backward compatibility
+    @Query("SELECT f.category, SUM(f.amount) FROM FinancialRecord f WHERE f.deletedAt IS NULL GROUP BY f.category")
+    List<Object[]> sumByCategoryAllTime();
+
+    // Monthly trends with date range filtering
     @Query("SELECT FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type, SUM(f.amount) " +
            "FROM FinancialRecord f " +
+           "WHERE f.deletedAt IS NULL AND f.date BETWEEN :startDate AND :endDate " +
            "GROUP BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type " +
            "ORDER BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date)")
-    List<Object[]> getMonthlyTrends();
+    List<Object[]> getMonthlyTrends(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    // Legacy method for backward compatibility
+    @Query("SELECT FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type, SUM(f.amount) " +
+           "FROM FinancialRecord f " +
+           "WHERE f.deletedAt IS NULL " +
+           "GROUP BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date), f.type " +
+           "ORDER BY FUNCTION('YEAR', f.date), FUNCTION('MONTH', f.date)")
+    List<Object[]> getMonthlyTrendsAllTime();
+
+    // Count transactions in date range
+    Integer countByDateBetweenAndDeletedAtIsNull(LocalDate startDate, LocalDate endDate);
+
+    // Count transactions by type in date range
+    Integer countByTypeAndDateBetweenAndDeletedAtIsNull(TransactionType type, LocalDate startDate, LocalDate endDate);
+
+    // Find latest transaction date in range
+    @Query("SELECT MAX(f.date) FROM FinancialRecord f WHERE f.deletedAt IS NULL AND f.date BETWEEN :startDate AND :endDate")
+    LocalDateTime findLatestTransactionDate(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }
