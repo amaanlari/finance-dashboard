@@ -1,12 +1,13 @@
 package io.zorvyn.task.financedashboard.service;
 
+import io.zorvyn.task.financedashboard.dto.FinancialRecordFilter;
 import io.zorvyn.task.financedashboard.dto.FinancialRecordRequest;
 import io.zorvyn.task.financedashboard.dto.FinancialRecordResponse;
 import io.zorvyn.task.financedashboard.exception.ResourceNotFoundException;
 import io.zorvyn.task.financedashboard.model.FinancialRecord;
-import io.zorvyn.task.financedashboard.model.TransactionType;
 import io.zorvyn.task.financedashboard.model.User;
 import io.zorvyn.task.financedashboard.repository.FinancialRecordRepository;
+import io.zorvyn.task.financedashboard.repository.FinancialRecordSpecification;
 import io.zorvyn.task.financedashboard.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -14,9 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,44 +37,25 @@ public class FinancialRecordService {
                 .createdBy(currentUser)
                 .build();
 
-        record = recordRepository.save(record);
-        return mapToResponse(record);
+        return mapToResponse(recordRepository.save(record));
     }
 
-    public List<FinancialRecordResponse> getAllRecords() {
-        return recordRepository.findAll().stream()
+    public List<FinancialRecordResponse> getRecords(FinancialRecordFilter filter) {
+        if (filter.startDate() != null && filter.endDate() != null
+                && filter.startDate().isAfter(filter.endDate())) {
+            throw new IllegalArgumentException("startDate must not be after endDate");
+        }
+
+        return recordRepository.findAll(FinancialRecordSpecification.withFilter(filter))
+                .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public FinancialRecordResponse getRecordById(Long id) {
-        FinancialRecord record = recordRepository.findById(id)
+        return recordRepository.findById(id)
+                .map(this::mapToResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Record not found with id: " + id));
-        return mapToResponse(record);
-    }
-
-    public List<FinancialRecordResponse> getRecordsByType(TransactionType type) {
-        return recordRepository.findByType(type).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<FinancialRecordResponse> getRecordsByCategory(String category) {
-        return recordRepository.findByCategory(category).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<FinancialRecordResponse> getRecordsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return recordRepository.findByDateBetween(startDate, endDate).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<FinancialRecordResponse> getRecentRecords() {
-        return recordRepository.findTop10ByOrderByDateDesc().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -89,8 +69,7 @@ public class FinancialRecordService {
         record.setDate(request.getDate());
         record.setNotes(request.getNotes());
 
-        record = recordRepository.save(record);
-        return mapToResponse(record);
+        return mapToResponse(recordRepository.save(record));
     }
 
     @Transactional
@@ -103,8 +82,7 @@ public class FinancialRecordService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
+        return userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
 

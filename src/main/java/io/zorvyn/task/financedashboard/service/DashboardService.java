@@ -30,7 +30,7 @@ public class DashboardService {
 
         Map<String, BigDecimal> categoryTotals = getCategoryTotals();
         Map<String, BigDecimal> monthlyTrends = getMonthlyTrends();
-        List<FinancialRecordResponse> recentActivity = recordService.getRecentRecords();
+        List<FinancialRecordResponse> recentActivity = this.getRecentActivity();
 
         return DashboardSummary.builder()
                 .totalIncome(totalIncome)
@@ -40,6 +40,23 @@ public class DashboardService {
                 .monthlyTrends(monthlyTrends)
                 .recentActivity(recentActivity)
                 .build();
+    }
+
+    private List<FinancialRecordResponse> getRecentActivity() {
+        return recordRepository.findTop10ByOrderByDateDesc()
+                .stream()
+                .map(record -> FinancialRecordResponse.builder()
+                        .id(record.getId())
+                        .amount(record.getAmount())
+                        .type(record.getType().name())
+                        .category(record.getCategory())
+                        .date(record.getDate())
+                        .notes(record.getNotes())
+                        .createdBy(record.getCreatedBy().getUsername())
+                        .createdAt(record.getCreatedAt())
+                        .updatedAt(record.getUpdatedAt())
+                        .build())
+                .toList();
     }
 
     private Map<String, BigDecimal> getCategoryTotals() {
