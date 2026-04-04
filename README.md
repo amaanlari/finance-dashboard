@@ -296,28 +296,10 @@ GET /api/records/{id}
 Authorization: Bearer <token>
 ```
 
-#### Get Records by Type
-```http
-GET /api/records/type/{INCOME|EXPENSE}
-Authorization: Bearer <token>
-```
-
-#### Get Records by Category
-```http
-GET /api/records/category/{category}
-Authorization: Bearer <token>
-```
-
-#### Get Records by Date Range
-```http
-GET /api/records/date-range?startDate=2024-01-01&endDate=2024-01-31
-Authorization: Bearer <token>
-```
-
-#### Get Recent Records
-```http
-GET /api/records/recent
-Authorization: Bearer <token>
+#### Get Records by Filter ```http
+GET /api/records?type={TYPE}&category={CATEGORY}&startDate={START_DATE}&endDate={END_DATE} HTTP/1.1
+Host: {HOST}:{PORT}
+Authorization: Bearer {ACCESS_TOKEN}
 ```
 
 #### Update Record (ADMIN, ANALYST)
