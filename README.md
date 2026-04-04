@@ -187,8 +187,6 @@ Swagger UI provides:
 4. Click **"Authorize"** button (🔓) and enter: `Bearer <your-token>`
 5. Now you can test all secured endpoints!
 
-📖 **For detailed Swagger documentation, see**: [SWAGGER_DOCUMENTATION.md](SWAGGER_DOCUMENTATION.md)
-
 ---
 
 ### Manual API Testing (cURL Examples)
